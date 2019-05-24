@@ -1,16 +1,25 @@
 package com.hhf.api.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+
+import com.google.common.collect.Maps;
 
 @RestController
 @RequestMapping("/VIP")
 public class VipApiController {
 
+	@Autowired
+	private DiscoveryClient discoveryClient;//DiscoveryClient：可获取注册中心的信息
+
+	
 	// 在springCloud中，两种方式调用rest和fegin（springcloud）
 
 	@Autowired
@@ -30,6 +39,15 @@ public class VipApiController {
 		 // 如果想以别名方式调用服务，restTemplate对象需要依赖ribbon负载均衡器
 		// 注解@LoadBalanced能让这个restTemplate实例在请求时拥有客户端负载均衡的能力。
 		return "VIP--调用User:" + result;
+	}
+	
+	@RequestMapping("getZkData")
+	public Map<String,Object> getEurekaData(String name){
+		Map<String,Object> map=Maps.newHashMap();
+		List<ServiceInstance> instances = discoveryClient.getInstances(name);
+		map.put("data", instances);
+		map.put("success", true);
+		return map;
 	}
 
 }
