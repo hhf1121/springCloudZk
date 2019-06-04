@@ -1,5 +1,6 @@
 package com.hhf.api.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import com.google.common.collect.Maps;
+import com.hhf.fegin.IUserFegin;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
 @RestController
 @RequestMapping("/VIP")
@@ -19,6 +22,8 @@ public class VipApiController {
 	@Autowired
 	private DiscoveryClient discoveryClient;//DiscoveryClient：可获取注册中心的信息
 
+	@Autowired
+	private IUserFegin userFegin;
 	
 	// 在springCloud中，两种方式调用rest和fegin（springcloud）
 
@@ -41,6 +46,7 @@ public class VipApiController {
 		return "VIP--调用User:" + result;
 	}
 	
+	
 	@RequestMapping("getZkData")
 	public Map<String,Object> getEurekaData(String name){
 		Map<String,Object> map=Maps.newHashMap();
@@ -48,6 +54,45 @@ public class VipApiController {
 		map.put("data", instances);
 		map.put("success", true);
 		return map;
+	}
+	
+	
+	/**
+	 * fegin客户端调用
+	 * 开启hystrix保护
+	 * 1.注解的方式
+	 * @param times
+	 * @return
+	 */
+	@RequestMapping("/getTimeOut")
+//	@HystrixCommand(fallbackMethod="getUserByTimeHystrixBack")
+	public Map<String,Object> getUserTime(Long times){
+		return userFegin.getTimeOut(times);
+	}
+	
+	/**
+	 * 熔断之后，服务降级对应的方法，必须和原方法同参数，同返回。
+	 * @param times
+	 * @return
+	 */
+	public Map<String,Object> getUserByTimeHystrixBack(Long times){
+		HashMap<String, Object> newHashMap = Maps.newHashMap();
+		newHashMap.put("info","请求参数:"+times+"---------服务忙，请稍后再试。。。");
+		newHashMap.put("code", 500);
+		return newHashMap;
+	}
+	
+	
+	/**
+	 * fegin客户端调用
+	 * 开启hystrix保护
+	 * 2.类继承的方式fallback
+	 * @param times
+	 * @return
+	 */
+	@RequestMapping("/getTimeOut_fallback")
+	public Map<String,Object> getTimeOut_fallback(Long times){
+		return userFegin.getTimeOut(times);
 	}
 
 }
